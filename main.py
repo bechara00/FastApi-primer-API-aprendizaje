@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from unittest import result
+from fastapi import FastAPI, Query
 from pydantic import BaseModel
-from typing import Union
+from typing import Union, Annotated
 from enum import Enum
 
 app = FastAPI()
@@ -32,6 +33,14 @@ async def read_item_consult(skip: int = 0, limit: int = 10):
     return fake_items_db[skip : skip + limit]
 
 
+@app.get("/facturas/")
+async def read_facturas(q: Annotated[str | None, Query(max_length=50)] = None):
+    results = {"facturas": [{"tipo_factura": "A"}, {"tipo_factura": "B"}]}
+    if q:
+        results.update({"q": q})
+    return results
+
+
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
@@ -43,8 +52,12 @@ async def create_item(item: Item):
 
 
 @app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
+def update_item(item_id: int, item: Item, q: str | None = None):
+    # return {"item_name": item.name, "item_id": item_id}
+    result = {"item_id": item_id, **item.model_dump()}
+    if q:
+        result.update({"q": q})
+    return result
 
 
 @app.get("/models/{model_name}")
